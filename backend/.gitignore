@@ -1,0 +1,14 @@
+# Entorno virtual
+venv/
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+# Entornos locales
+.env
+# Bases de datos
+db.sqlite3
+# Logs
+*.log
+# Archivos de sistema
+.DS_Store
