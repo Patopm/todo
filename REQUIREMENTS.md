@@ -1,96 +1,120 @@
-# Requisitos mínimos para el MVP de la To-Do App
+# Requisitos y Reglas de Negocio
 
-## 1. Requisitos de negocio mínimos
+Este documento recoge los requisitos que debe cumplir la To-Do App para resolver la descoordinación y falta de visibilidad en la gestión de tareas de la organización, así como las reglas de negocio que rigen su funcionamiento.
 
-- Registro e inicio de sesión de usuarios (roles: `admin`, `usuario`).
-- CRUD de tareas con campos básicos:
-  - título
-  - descripción
-  - estado (ToDo / Done)
-  - responsable
-- Listado de tareas con filtros por estado y responsable.
-- Visualización de detalle de tarea y posibilidad de marcar como completada.
-- Asignación y reasignación de tareas a un usuario.
+---
 
-## 2. Requisitos técnicos mínimos
+## 1. Requisitos de Negocio
 
-### 2.1 Backend
+- Unificar en un único repositorio la creación, asignación y seguimiento de tareas.
+- Permitir a cada usuario ver únicamente sus propias tareas y su estado.
+- Facilitar la coordinación interdepartamental mostrando fechas de creación, vencimiento y estado.
+- Evitar duplicidad de tareas y tareas “fantasma” (creadas pero nunca asignadas ni cerradas).
+- Ofrecer métricas básicas de carga de trabajo (número de tareas pendientes/terminadas).
+- Garantizar un proceso seguro de registro e inicio de sesión.
 
-- Django 4.x + Django REST Framework.
-- Modelos:
-  - `User` (extensible)
-  - `Task`
-- Endpoints REST:
-  - POST `/api/auth/register`
-  - POST `/api/auth/login`
-  - GET `/api/tasks`
-  - POST `/api/tasks`
-  - GET `/api/tasks/:id`
-  - PUT `/api/tasks/:id`
-  - DELETE `/api/tasks/:id`
-- Autenticación JWT (django-rest-framework-simplejwt).
-- Configuración de CORS para conectar con el frontend.
+## 2. Requisitos Funcionales
 
-### 2.2 Frontend
+1. **Autenticación**
+   - Registro de usuario con `username`, `email` único y `password`.
+   - Inicio de sesión → JWT `access` + `refresh`.
+   - Refresh de token.
+   - Logout → elimine token local y limpie cabecera Authorization.
 
-- Next.js 13.x (JavaScript o TypeScript).
-- Páginas:
-  - `/login`
-  - `/register`
-  - `/tasks` (listado con filtros)
-  - `/tasks/[id]` (detalle + marcar completada)
-  - `/tasks/new` (formulario de creación)
-- Consumo de API REST vía `fetch` o `axios`.
+2. **CRUD de Tareas**
+   - Crear tarea con:
+     • `title` (obligatorio)
+     • `description` (opcional)
+     • `status` (ToDo/Done; default = ToDo)
+     • `responsible` (oculto, se asigna al user actual).
+   - Listar tareas filtradas por `responsible = usuario actual`.
+   - Ver detalle de una tarea.
+   - Editar:
+     • Sólo se permite cambiar `status`.
+     • Sólo responsable puede modificarla.
+   - Borrar tarea.
 
-### 2.3 Base de datos
+3. **Visibilidad y Navegación (Frontend)**
+   - Ruta `/login`, `/register` y rutas protegidas `/tasks`, `/tasks/new`, `/tasks/[id]`.
+   - Al entrar a rutas protegidas sin token → redirigir a `/login`.
+   - Al iniciar o registrar → redirigir automáticamente a `/tasks`.
+   - Al hacer logout → redirigir a `/login`.
 
-- PostgreSQL 13+.
+4. **Interfaz de Usuario**
+   - Listado con título, estado y fecha de creación.
+   - Formulario de nueva tarea con validación inline.
+   - Página de detalle con botón para toggle status y eliminar.
 
-### 2.4 Orquestación
+5. **Documentación & Tests**
+   - Documentación automática OpenAPI + Swagger UI en `/api/docs/`.
+   - Cobertura de pruebas unitarias e integración para:
+     • Serializers (validación de campos).
+     • Endpoints (201/200/400/401/404).
+     • Flujo de login/register.
+     • CRUD de tareas.
 
-- Docker Compose con servicios:
-  - `django`
-  - `nextjs`
-  - `postgres`
-- Archivo `.env` para credenciales y secretos (JWT_SECRET, DATABASE_NAME, etc.).
+## 3. Requisitos Técnicos
 
-### 2.5 Desarrollo y calidad
+- **Backend**
+  - Django 4.x + Django REST Framework.
+  - Autenticación JWT con `djangorestframework-simplejwt`.
+  - PostgreSQL 13+ (via `psycopg2-binary`).
+  - CORS configurado (`django-cors-headers`).
+  - Contenedores Docker (web + db).
 
-- Linter / formateador:
-  - Python: Black + Flake8
-  - JavaScript/TypeScript: ESLint + Prettier
-- Scripts básicos:
-  - migraciones y arranque del backend (`make migrate`, `make run`)
-  - arranque del frontend (`npm run dev`)
+- **Frontend**
+  - Next.js 15.5.2 con App Router (no `src/`).
+  - TypeScript + ESLint.
+  - Tailwind CSS (o similar) para estilos.
+  - Axios para llamadas HTTP.
+  - React Hook Form para formularios.
+  - Context API para gestionar el token JWT y el estado de usuario.
 
-## 3. Requisitos no funcionales mínimos
+## 4. Requisitos No Funcionales
 
-### 3.1 Seguridad
+- **Seguridad**
+  - HTTPS en producción.
+  - Validación/sanitización server-side de todas las entradas.
+  - Emails únicos y passwords hasheadas (bcrypt).
 
-- HTTPS en producción (NGINX).
-- Protección CSRF en Django y cabeceras CORS definidas.
-- Validación y sanitización de entradas en el backend.
+- **Rendimiento**
+  - Paginación o lazy-load para listados (+100 tareas).
+  - Tiempos de respuesta <300 ms para endpoints críticos.
 
-### 3.2 Rendimiento
+- **Disponibilidad y Escalabilidad**
+  - Arquitectura en contenedores (Docker Compose).
+  - Backups automáticos de PostgreSQL.
 
-- Tiempo de respuesta < 300 ms en endpoints de listado y detalle con hasta 100 tareas.
+- **Mantenibilidad**
+  - Linter y formateador configurados (Black, Flake8, ESLint, Prettier).
+  - CI/CD: tests + linters en cada PR.
+  - Documentación de setup y despliegue.
 
-### 3.3 Disponibilidad
+## 5. Reglas de Negocio
 
-- Despliegue en contenedores separados (escalable horizontalmente).
-- Backups diarios de PostgreSQL (dumps automatizados).
+1. **Responsable Automático**
+   - Al crear una tarea, el campo `responsible` se asigna automáticamente al usuario autenticado; no puede elegirse en el formulario.
 
-### 3.4 Mantenibilidad
+2. **Visibilidad de Tareas**
+   - Cada usuario sólo puede ver/modificar/borrar tareas donde `responsible = su usuario`.
 
-- README con pasos de instalación, migraciones y arranque.
-- Pruebas unitarias básicas:
-  - `pytest` para Django
-  - `Jest` para Next.js
-- Documentación de la API (Swagger o Redoc).
+3. **Estados y Transiciones**
+   - Solo dos estados válidos: `todo` y `done`.
+   - La transición es reversible (un `done` puede volver a `todo`).
 
-### 3.5 Escalabilidad futura
+4. **Unicidad de Usuario**
+   - Cada email de usuario debe ser único.
+   - `username` único en el sistema.
 
-- Separación clara de capas en el backend:
-  - `models`
-  - `serializers`
-  - `views`
+5. **Seguridad de Endpoints**
+   - Todos los endpoints de tareas requieren JWT válido.
+   - El endpoint de registro está abierto; login y refresh abierto; todo lo demás autenticado.
+
+6. **Validación de Campos**
+   - `title` no puede estar vacío.
+   - `description` opcional.
+   - `status` debe ser uno de los valores admitidos.
+
+---
+
+Con estos requisitos y reglas de negocio claros, podemos garantizar que la aplicación unifica la gestión de tareas, mejora la coordinación entre equipos y proporciona visibilidad y control de la carga de trabajo de forma segura y escalable.```
