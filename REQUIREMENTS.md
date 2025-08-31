@@ -67,7 +67,7 @@
 
 ### 3.1 Seguridad
 
-- HTTPS en producción (NGINX o Vercel).
+- HTTPS en producción (NGINX).
 - Protección CSRF en Django y cabeceras CORS definidas.
 - Validación y sanitización de entradas en el backend.
 
@@ -90,7 +90,6 @@
 
 ### 3.5 Escalabilidad futura
 
-- Versionado de la API (`/api/v1/...`).
 - Separación clara de capas en el backend:
   - `models`
   - `serializers`
